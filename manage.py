@@ -9,17 +9,10 @@ sys.setdefaultencoding('utf-8')
 
 
 app = create_app('DevelopmentConfig')
-from iHome import redis_store
 manager = Manager(app)
 Migrate(app, db)
 manager.add_command('db', MigrateCommand)
 
-
-@app.route('/', methods=['POST', 'GET'])
-def index():
-    redis_store.set('name', 'asd')
-    session['name'] = 'llll'
-    return 'index'
 
 if __name__ == '__main__':
     manager.run()
