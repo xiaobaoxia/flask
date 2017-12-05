@@ -29,3 +29,8 @@ class ProductionConfig(Config):
     pass
 
 
+config = {
+    'DevelopmentConfig': DevelopmentConfig,
+    'ProductionConfig': ProductionConfig
+}
+
