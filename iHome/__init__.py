@@ -1,14 +1,17 @@
 # coding=utf-8
+import logging
+import sys
+from logging.handlers import RotatingFileHandler
+
+import redis
 from flask import Flask
+from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
-from flask_session import Session
-import redis
-from config import config
+
 import api_1_0
-import logging
-from logging.handlers import RotatingFileHandler
-import sys
+from config import config
+
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
@@ -38,7 +41,7 @@ def create_app(config_name):
     csrf.init_app(app)
     global redis_store
     redis_store = redis.StrictRedis(host=config[config_name].REDIS_HOST, port=config[config_name].REDIS_PORT)
-    from utils.converter import RegexConverter
+    from iHome.utils.converter import RegexConverter
     app.url_map.converters['re'] = RegexConverter
     from iHome import api_1_0
     app.register_blueprint(api_1_0.api, url_prefix='/api/v1.0')
