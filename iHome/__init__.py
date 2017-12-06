@@ -8,8 +8,6 @@ from flask import Flask
 from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
-import sqlalchemy.dialects.mysql.base
-import api_1_0
 from config import config
 
 reload(sys)
@@ -36,15 +34,20 @@ logging.getLogger().addHandler(file_log_handler)
 def create_app(config_name):
     app = Flask(__name__)
     app.config.from_object(config[config_name])
+
     Session(app)
     db.init_app(app)
     csrf.init_app(app)
+
     global redis_store
     redis_store = redis.StrictRedis(host=config[config_name].REDIS_HOST, port=config[config_name].REDIS_PORT)
+
     from iHome.utils.common import RegexConverter
     app.url_map.converters['re'] = RegexConverter
+
     from iHome import api_1_0
     app.register_blueprint(api_1_0.api, url_prefix='/api/v1.0')
+
     from static_html import static_api
     app.register_blueprint(static_api)
     return app
