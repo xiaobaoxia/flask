@@ -1,6 +1,5 @@
 # coding=utf-8
 from flask_script import Manager
-from flask import session
 from flask_migrate import Migrate, MigrateCommand
 from iHome import create_app, db
 import sys

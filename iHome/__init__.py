@@ -18,11 +18,16 @@ redis_store = None
 
 def create_app(config_name):
     app = Flask(__name__)
-    app.register_blueprint(api_1_0.api, url_prefix='/api/v1.0')
     app.config.from_object(config[config_name])
     Session(app)
     db.init_app(app)
     csrf.init_app(app)
     global redis_store
     redis_store = redis.StrictRedis(host=config[config_name].REDIS_HOST, port=config[config_name].REDIS_PORT)
+    from utils.converter import RegexConverter
+    app.url_map.converters['re'] = RegexConverter
+    from iHome import api_1_0
+    app.register_blueprint(api_1_0.api, url_prefix='/api/v1.0')
+    from static_html import static_api
+    app.register_blueprint(static_api)
     return app
