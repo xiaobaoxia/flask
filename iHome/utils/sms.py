@@ -26,20 +26,36 @@ softVersion = '2013-12-26';
 # @param datas �������� ��ʽΪ���� ���磺{'12','34'}���粻���滻���� ''
 # @param $tempId ģ��Id
 
-def sendTemplateSMS(to, datas, tempId):
-    # ��ʼ��REST SDK
-    rest = REST(serverIP, serverPort, softVersion)
-    rest.setAccount(accountSid, accountToken)
-    rest.setAppId(appId)
+# def sendTemplateSMS(to, datas, tempId):
+#     # ��ʼ��REST SDK
+#     rest = REST(serverIP, serverPort, softVersion)
+#     rest.setAccount(accountSid, accountToken)
+#     rest.setAppId(appId)
+#
+#     result = rest.sendTemplateSMS(to, datas, tempId)
+#     for k, v in result.iteritems():
+#
+#         if k == 'templateSMS':
+#             for k, s in v.iteritems():
+#                 print '%s:%s' % (k, s)
+#         else:
+#             print '%s:%s' % (k, v)
 
-    result = rest.sendTemplateSMS(to, datas, tempId)
-    for k, v in result.iteritems():
 
-        if k == 'templateSMS':
-            for k, s in v.iteritems():
-                print '%s:%s' % (k, s)
+class CCP(object):
+    def __new__(cls, *args, **kwargs):
+        if not hasattr(cls, '_instance'):
+            cls._instance = super(CCP, cls).__new__(cls, *args, **kwargs)
+            cls._instance.rest = REST(serverIP, serverPort, softVersion)
+            cls._instance.rest.setAccount(accountSid, accountToken)
+            cls._instance.rest.setAppId(appId)
+        return cls._instance
+
+    def send_template_sms(self, to, datas, tempId):
+        result = self.rest.sendTemplateSMS(to, datas, tempId)
+        if result['statusCode'] == '000000':
+            return 1
         else:
-            print '%s:%s' % (k, v)
+            return 0
 
-
-sendTemplateSMS("18561523250", ["123123", "3"], "1")
+# sendTemplateSMS("18561523250", ["123123", "3"], "1")

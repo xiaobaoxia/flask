@@ -5,8 +5,9 @@ from iHome.utils.captcha.captcha import captcha
 from iHome import redis_store
 from iHome import constants
 from iHome.utils.response_code import RET
-import random
-import re
+from iHome.utils.sms import CCP
+from iHome.models import User
+import random, re
 from . import api
 
 
@@ -63,7 +64,7 @@ def send_sms_code():
     if not all([mobile, image_code, image_code_id]):
         return jsonify(errno=RET.PARAMERR, errmsg='参数不完整')
     # 判断手机号是否合法
-    if not re.match("^((13[0-9])|(14[5|7])|(15([0-3]|[5-9]))|(18[0,5-9]))\\d{8}$", mobile):
+    if not re.match("^1[3578][0-9]{9}$", mobile):
         return jsonify(errno=RET.PARAMERR, errmsg='手机号不正确')
     # 判断图片验证码是否正确
     # 获取真实验证码
@@ -88,7 +89,29 @@ def send_sms_code():
         current_app.logger.error(e)
         return jsonify(errno=RET.DBERR, errmsg='删除本地验证码错误')
 
-    sms_code = '%06d' % random.randint(100000, 999999)
+    try:
+        user = User.quert.filter_by(mobile=mobile).first()
+    except Exception as e:
+        current_app.logger.error(e)
+        user = None
+    if user:
+        return jsonify(errno=RET.DATAEXIST, errmsg='手机号已被注册')
+
+    sms_code = '%06d' % random.randint(0, 999999)
+
+    current_app.logger.debug('短信验证码' + sms_code)
+
+    # result = CCP().send_template_sms(mobile, [sms_code, constants.SMS_CODE_REDIS_EXPIRES / 60], '1')
+    #
+    # if result != 1:
+    #     return jsonify(errno=RET.THIRDERR, errmsg='发送短信验证码失败')
+
+    try:
+        redis_store.set('SMS_' + mobile, sms_code, constants.SMS_CODE_REDIS_EXPIRES)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg='保存短信验证码错误')
+
 
     # 发送成功
     return jsonify(errno=RET.OK, errmsg='发送成功')

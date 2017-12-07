@@ -53,18 +53,33 @@ function sendSMSCode() {
     async:true,//请求是否异步，默认为异步，这也是ajax重要特性
     data:JSON.stringify(json_data),    //参数值
     type:"POST",   //请求方式 get 或者post
-    beforeSend:function(){
-        //请求前的处理
-    },
-    success:function(req){
+    success:function(resp){
         //请求成功时处理
+        generateImageCode();
+        if (resp.errno == 0){
+            var num = 60;
+            var t = setInterval(function () {
+                num -= 1;
+                if (num == 0){
+                    clearInterval(t);
+                    $(".phonecode-a").attr("onclick", "sendSMSCode();");
+                    $(".phonecode-a").html("获取验证码")
+
+                }else {
+
+                    $(".phonecode-a").html(num+'秒')
+                }
+            }, 1000, 60)
+        }else {
+            $(".phonecode-a").attr("onclick", "sendSMSCode();");
+            alert(resp.errmsg)
+        }
 
     },
-    complete:function(){
-        //请求完成的处理
-    },
-    error:function(){
-        //请求出错处理
+    error:function () {
+        generateImageCode();
+        $(".phonecode-a").attr("onclick", "sendSMSCode();");
+        alert('服务器错误, 请重试')
     }
 });
 }
