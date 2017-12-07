@@ -44,7 +44,7 @@ function sendSMSCode() {
         return;
     }
     var json_data = {'mobile': mobile, 'image_code': imageCode, 'image_code_id': imageCodeId };
-    // TODO: 通过ajax方式向后端接口发送请求，让后端发送短信验证码
+    // 通过ajax方式向后端接口发送请求，让后端发送短信验证码
     $.ajax({
     url:"/api/v1.0/smscode",    //请求的url地址
     dataType:"json",   //返回格式为json
@@ -56,6 +56,7 @@ function sendSMSCode() {
     success:function(resp){
         //请求成功时处理
         generateImageCode();
+        // alert('短信验证码已发送');
         if (resp.errno == 0){
             var num = 60;
             var t = setInterval(function () {
@@ -70,9 +71,19 @@ function sendSMSCode() {
                     $(".phonecode-a").html(num+'秒')
                 }
             }, 1000, 60)
-        }else {
+        }else if (resp.errno == 4103) {
             $(".phonecode-a").attr("onclick", "sendSMSCode();");
+            $("#mobile-err span").html(resp.errmsg);
+            $("#mobile-err").show();
             alert(resp.errmsg)
+        }else if (resp.errno == 4004){
+            $("#image-code-err span").html(resp.errmsg);
+            $("#image-code-err").show();
+            $(".phonecode-a").attr("onclick", "sendSMSCode();");
+        }else if (resp.errno == 4003){
+            $(".phonecode-a").attr("onclick", "sendSMSCode();");
+            $("#mobile-err span").html(resp.errmsg);
+            $("#mobile-err").show();
         }
 
     },
@@ -103,5 +114,38 @@ $(document).ready(function() {
         $("#password2-err").hide();
     });
 
-    // TODO: 注册的提交(判断参数是否为空)
-})
+    // 注册的提交(判断参数是否为空)
+    $('.form-register').submit(function (e) {
+        e.preventDefault();
+        mobile = $("#mobile").val();
+        phonecode = $("#phonecode").val();
+        password = $("#password").val();
+        password2 = $("#password2").val();
+
+        if (!mobile){
+            $("#mobile-err span").html('请填写正确的手机号!');
+            $("#mobile-err").show();
+            return;
+        }
+        if (!phonecode){
+            $("#phone-code-err span").html('请填写短信验证码!');
+            $("#phone-code-err").show();
+            return;
+        }
+        if (!password){
+            $("#password-err span").html('请填写密码!');
+            $("#password-err").show();
+            return;
+        }
+        if (password != password2){
+            $("#password2-err span").html('两次密码不一致!');
+            $("#password2-err").show();
+            return;
+        }
+        // todo: 发送ajax注册账号
+        $.ajax({
+
+        })
+
+    })
+});
