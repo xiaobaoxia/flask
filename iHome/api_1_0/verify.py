@@ -1,6 +1,5 @@
 # coding=utf-8
 from flask import request, abort, jsonify, current_app, make_response
-import json
 from iHome.utils.captcha.captcha import captcha
 from iHome import redis_store
 from iHome import constants
@@ -54,12 +53,13 @@ def send_sms_code():
     保存验证码, 发送短信   手机号: 短信验证码 redis
     :return:
     '''
-    json_data = request.get_data()
-    args = json.loads(json_data)
+    # json_data = request.data
+    # data_dict = json.loads(json_data)
+    data_dict = request.json
 
-    image_code = args['image_code']
-    image_code_id = args['image_code_id']
-    mobile = args['mobile']
+    image_code = data_dict['image_code']
+    image_code_id = data_dict['image_code_id']
+    mobile = data_dict['mobile']
     # 判断数据是否完整
     if not all([mobile, image_code, image_code_id]):
         return jsonify(errno=RET.PARAMERR, errmsg='参数不完整')

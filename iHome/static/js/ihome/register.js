@@ -143,9 +143,25 @@ $(document).ready(function() {
             return;
         }
         // todo: 发送ajax注册账号
-        $.ajax({
-
-        })
-
-    })
+        json_data = {'mobile': mobile, 'phonecode': phonecode,
+                    'password': password, 'password2': password2};
+         $.ajax({
+             url: "/api/v1.0/user",    //请求的url地址
+             dataType: "json",   //返回格式为json
+             contentType: "application/json",
+             headers: {"X-CSRFToken": getCookie('csrf_token')},
+             async: true,//请求是否异步，默认为异步，这也是ajax重要特性
+             data: JSON.stringify(json_data),    //参数值
+             type: "POST",   //请求方式 get 或者post
+             success:function (resp) {
+                if (resp.errno == '0'){
+                    location.href('/')
+                }
+                else{
+                    $("#password2-err span").html(resp.errmsg);
+                    $("#password2-err").show();
+                }
+             }
+         });
+    });
 });
