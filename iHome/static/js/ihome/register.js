@@ -154,8 +154,9 @@ $(document).ready(function() {
              data: JSON.stringify(json_data),    //参数值
              type: "POST",   //请求方式 get 或者post
              success:function (resp) {
-                if (resp.errno == '0'){
-                    location.href('/')
+                if (resp.errno == 0){
+
+                    location.href = '/'
                 }
                 else{
                     $("#password2-err span").html(resp.errmsg);

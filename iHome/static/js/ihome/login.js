@@ -38,8 +38,8 @@ $(document).ready(function() {
                 'X-CSRFToken': getCookie('csrf_token')
             },
             success:function (resp) {
-                if (resp.errno == '0'){
-                    location.href('/')
+                if (resp.errno == 0){
+                    location.href = '/'
                 }else {
                     $("#password-err span").html(resp.errmsg);
                     $("#password-err").show();

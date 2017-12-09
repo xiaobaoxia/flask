@@ -49,14 +49,14 @@ def register():
         db.session.commit()
     except Exception as e:
         current_app.logger.error(e)
-        db.session.rollback()
+        db.rollback()
         return jsonify(errno=RET.DBERR, errmsg='数据保存错误')
 
     # 保存登录状态
     session['user_id'] = user.id
     session['name'] = user.name
     session['mobile'] = user.mobile
-
+    print '0'
     return jsonify(errno=RET.OK, errmsg='注册成功')
 
 
