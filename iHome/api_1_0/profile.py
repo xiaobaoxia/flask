@@ -30,9 +30,16 @@ def get_user_info():
 @api.route('/user/name', methods=['POST'])
 @login_required
 def set_user_name():
-    user_name = request.json['user_name']
-    if not user_name:
+    name = request.json.get('name')
+    if not name:
         return jsonify(errno=RET.PARAMERR, errmsg='参数不完整')
+    try:
+        user = User.query.filter_by(name=name).first()
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg='数据查询错误')
+    if user:
+        return jsonify(errno=RET.DATAEXIST, errmsg='用户名已存在')
     user_id = g.user_id
     try:
         user = User.query.get(user_id)
@@ -41,7 +48,7 @@ def set_user_name():
         return jsonify(errno=RET.DBERR, errmsg='数据查询错误')
     if not user:
         return jsonify(errno=RET.USERERR, errmsg='用户不存在')
-    user.name = user_name
+    user.name = name
     try:
         db.session.commit()
     except Exception as e:
@@ -49,7 +56,7 @@ def set_user_name():
         current_app.logger.error(e)
         return jsonify(errno=RET.DBERR, errmsg='保存失败')
 
-    session['name'] = user_name
+    session['name'] = name
     return jsonify(errno=RET.OK, errmsg='OK')
 
 
