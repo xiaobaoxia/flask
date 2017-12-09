@@ -28,13 +28,13 @@ def register():
         real_phonecode = redis_store.get('SMS_' + mobile)
     except Exception as e:
         current_app.logger.error(e)
-        return jsonify(error=RET.DBERR, errmsg='短信验证码查询错误')
+        return jsonify(errno=RET.DBERR, errmsg='短信验证码查询错误')
 
     if not real_phonecode:
         return jsonify(errno=RET.NODATA, errmsg='短信验证码过期')
 
     if real_phonecode != phonecode:
-        return jsonify(error=RET.DBERR, errmsg='短信验证码错误')
+        return jsonify(errno=RET.DBERR, errmsg='短信验证码错误')
 
     if password != password:
         return jsonify(errno=RET.DATAERR, errmsg='两次密码不相等')
@@ -56,7 +56,7 @@ def register():
     session['user_id'] = user.id
     session['name'] = user.name
     session['mobile'] = user.mobile
-    print '0'
+    
     return jsonify(errno=RET.OK, errmsg='注册成功')
 
 

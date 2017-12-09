@@ -41,6 +41,23 @@ class User(BaseModel, db.Model):
     def check_password(self, value):
         return check_password_hash(self.password_hash, value)
 
+    def to_dict(self):
+        if not self.avatar_url:
+            self.avatar_url = ''
+        data = {
+            'name': self.name,
+            'mobile': self.mobile,
+            'avatar_url': constants.QINIU_DOMIN_PREFIX + self.avatar_url
+        }
+        return data
+
+    def to_auth_info(self):
+        data = {
+            'real_name': self.real_name,
+            'id_card': self.id_card
+        }
+        return data
+
 
 class Area(BaseModel, db.Model):
     """城区"""
