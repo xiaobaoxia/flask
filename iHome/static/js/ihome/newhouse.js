@@ -28,7 +28,7 @@ $(document).ready(function(){
         });
         var facility = [];
         $(":checkbox:checked").each(function (i, j) {
-            facility.append(j.val())
+            facility[i] = j.value
         });
         params['facility'] = facility;
         $.ajax({
