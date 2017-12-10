@@ -43,6 +43,7 @@ $(document).ready(function(){
                 if (resp.errno == '0'){
                     $("#form-house-info").hide();
                     $("#form-house-image").show();
+                    $("#house-id").val(resp.data.house_id);
                 }else if (resp.errno == '4101'){
                     location.href = '/login.html'
                 }else {
@@ -62,7 +63,7 @@ $(document).ready(function(){
             },
             success: function (resp) {
                 if (resp.errno == '0'){
-                    alert('添加成功')
+                    $(".house-image-cons").append('<img src="'+ resp.data.url +'">');
                 }else if (resp.errno == '4101'){
                     location.href = '/login.html'
                 }else {
