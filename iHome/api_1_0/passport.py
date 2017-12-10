@@ -96,3 +96,16 @@ def login():
     return jsonify(errno=RET.OK, errmsg='登陆成功')
 
 
+@api.route('/session', methods=['DELETE'])
+def logout():
+    session.pop('user_id')
+    session.pop('name')
+    session.pop('mobile')
+    return jsonify(errno=RET.OK, errmsg='OK')
+
+
+@api.route('/session')
+def check_login():
+    user_id = session.get('user_id')
+    name = session.get('name')
+    return jsonify(errno=RET.OK, errmsg='ok', data={'user_id': user_id, 'name': name})
