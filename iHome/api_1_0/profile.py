@@ -95,3 +95,52 @@ def set_user_avatar():
         return jsonify(errno=RET.DBERR, errmsg='用户数据保存失败')
 
     return jsonify(errno=RET.OK, errmsg='OK', data={'avatar_url': constants.QINIU_DOMIN_PREFIX + url})
+
+
+@api.route('/user/auth')
+@login_required
+def get_user_auth():
+    user_id = g.user_id
+    try:
+        user = User.query.get(user_id)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg='数据查询错误')
+    if not user:
+        return jsonify(errno=RET.USERERR, errmsg='用户不存在')
+
+    return jsonify(errno=RET.OK, errmsg='OK', data=user.to_auth_info())
+
+
+@api.route('/user/auth', methods=['POST'])
+@login_required
+def set_user_auth():
+    data = request.json
+    real_name = data['real_name']
+    id_card = data['id_card']
+
+    if not all([real_name, id_card]):
+        return jsonify(errno=RET.PARAMERR, errmsg='参数错误')
+
+    user_id = g.user_id
+    
+    try:
+        user = User.query.get(user_id)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg='查询数据错误')
+    if not user:
+        return jsonify(errno=RET.USERERR, errmsg='用户不存在')
+
+    user.real_name = real_name
+    user.id_card = id_card
+
+    try:
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        db.session.rollback()
+        return jsonify(errno=RET.DBERR, errmsg='保存数据错误')
+
+    return jsonify(errno=RET.OK, errmsg='ok', data=user.to_auth_info())
+
