@@ -34,7 +34,7 @@ def get_areas():
     return jsonify(errno=RET.OK, errmsg='OK', data=areas_dict)
 
 
-@api.route('/house', methods=['POST'])
+@api.route('/houses', methods=['POST'])
 @login_required
 def save_new_house():
     user_id = g.user_id
@@ -92,7 +92,7 @@ def save_new_house():
     return jsonify(errno=RET.OK, errmsg='ok', data={'house_id': house.id})
 
 
-@api.route('/house/image', methods=['POST'])
+@api.route('/houses/images', methods=['POST'])
 @login_required
 def save_house_image():
     # 获取房屋id
@@ -139,7 +139,7 @@ def save_house_image():
     return jsonify(errno=RET.OK, errmsg='ok', data={"url": QINIU_DOMIN_PREFIX + url})
 
 
-@api.route('/house/<int:house_id>')
+@api.route('/houses/<int:house_id>')
 def get_house_detail(house_id):
     user_id = session.get('user_id', -1)
     # if not user_id:
@@ -157,3 +157,16 @@ def get_house_detail(house_id):
 
     return jsonify(errno=RET.OK, errmsg='OK', data={'house_info': house_info, 'user_id': user_id})
 
+
+@api.route('/houses')
+def get_index_houses():
+    try:
+        houses = House.query.order_by(House.order_count.desc()).limit(constants.HOME_PAGE_MAX_HOUSES)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg='查询数据错误')
+    houses_dict = []
+    for house in houses:
+        houses_dict.append(house.to_basic_dict())
+
+    return jsonify(errno=RET.OK, errmsg='ok', data={'houses': houses_dict})

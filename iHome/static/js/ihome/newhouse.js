@@ -32,7 +32,7 @@ $(document).ready(function(){
         });
         params['facility'] = facility;
         $.ajax({
-            url: '/api/v1.0/house',
+            url: '/api/v1.0/houses',
             data: JSON.stringify(params),
             contentType: 'application/json',
             type: 'post',
@@ -56,7 +56,7 @@ $(document).ready(function(){
     $("#form-house-image").submit(function (e) {
         e.preventDefault();
         $(this).ajaxSubmit({
-            url: '/api/v1.0/house/image',
+            url: '/api/v1.0/houses/images',
             type: 'post',
             headers: {
                 'X-CSRFToken': getCookie('csrf_token')

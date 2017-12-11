@@ -18,7 +18,7 @@ $(document).ready(function(){
     var houseId = queryData["id"];
 
     // TODO: 获取该房屋的详细信息
-    $.get('/api/v1.0/house/' + houseId, function (resp) {
+    $.get('/api/v1.0/houses/' + houseId, function (resp) {
         if (resp.errno == '0'){
             if (resp.data.user_id != resp.data.house_info.user_id){
                 $(".book-house").attr('href', '/booking.html?hid='+houseId)
