@@ -146,6 +146,12 @@ def get_house_detail(house_id):
     #     user_id = -1
     if not house_id:
         return jsonify(errno=RET.PARAMERR, errmsg='参数错误')
+    try:
+        house_info = redis_store.get('house_%d' % house_id)
+        if house_info:
+            return jsonify(errno=RET.OK, errmsg='OK', data={'house_info': house_info, 'user_id': user_id})
+    except Exception as e:
+        current_app.logger.error(e)
 
     try:
         house = House.query.get(house_id)
@@ -158,8 +164,15 @@ def get_house_detail(house_id):
     return jsonify(errno=RET.OK, errmsg='OK', data={'house_info': house_info, 'user_id': user_id})
 
 
-@api.route('/houses')
+@api.route('/houses/index')
 def get_index_houses():
+    try:
+        houses = redis_store.get('house_index')
+        if houses:
+            return jsonify(errno=RET.OK, errmsg='ok', data=eval(houses))
+    except Exception as e:
+        current_app.logger.error(e)
+
     try:
         houses = House.query.order_by(House.order_count.desc()).limit(constants.HOME_PAGE_MAX_HOUSES)
     except Exception as e:
@@ -169,4 +182,42 @@ def get_index_houses():
     for house in houses:
         houses_dict.append(house.to_basic_dict())
 
-    return jsonify(errno=RET.OK, errmsg='ok', data={'houses': houses_dict})
+    try:
+        redis_store.set('house_index', houses_dict, constants.HOME_PAGE_DATA_REDIS_EXPIRES)
+    except Exception as e:
+        current_app.logger.error(e)
+
+    return jsonify(errno=RET.OK, errmsg='ok', data=houses_dict)
+
+
+@api.route('/houses')
+def get_house_list():
+    args = request.args
+    aid = args.get('aid')
+    aname = args.get('aname')
+    sd = args.get('sd')
+    ed = args.get('ed')
+    p = args.get('p', '1')
+    sk = args.get('sk', 'new')
+    try:
+        houses_query = House.query
+    except Exception as e:
+        current_app.logger.error(e)
+
+    if sk == 'booking':
+        houses_query = houses_query.order_by(House.order_count.desc())
+    elif sk == 'price-inc':
+        houses_query = houses_query.order_by(House.price)
+    elif sk == 'price-des':
+        houses_query = houses_query.order_by(House.price.desc())
+    else:
+        houses_query = houses_query.order_by(House.create_time.desc())
+    paginate = houses_query.paginate(int(p), constants.HOUSE_LIST_PAGE_CAPACITY, False)
+    total_page = paginate.pages
+    houses = paginate.items
+
+    houses_dict = []
+    for house in houses:
+        houses_dict.append(house.to_basic_dict())
+
+    return jsonify(errno=RET.OK, errmsg='ok', data={'houses': houses_dict, 'total_page': total_page})
