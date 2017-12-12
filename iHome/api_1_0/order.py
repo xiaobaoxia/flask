@@ -92,3 +92,18 @@ def add_order():
     return jsonify(errno=RET.OK, errmsg='ok')
 
 
+@api.route('/orders')
+@login_required
+def get_orders():
+    user_id = g.user_id
+    try:
+        orders_query = Order.query.filter(Order.user_id == user_id).order_by(Order.create_time.desc()).all()
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg='查询数据失败')
+
+    order_dict = []
+    for order in orders_query:
+        order_dict.append(order.to_dict())
+
+    return jsonify(errno=RET.OK, errmsg='ok', data={'orders': order_dict})
