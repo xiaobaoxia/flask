@@ -5,7 +5,7 @@ import redis
 class Config(object):
     SECRET_KEY = 'Alj2oWAjhqKiOIM9jPOJkSR4KNea8igzZde7oGdPuoGRuIaQ3a12wekqJqG2FP5l'
     # MySQL配置
-    SQLALCHEMY_DATABASE_URI = 'mysql://root:mysql@127.0.0.1:3306/ihome'
+    SQLALCHEMY_DATABASE_URI = 'mysql://root:mysql@127.0.0.1:3306/ihome0'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     # Redis配置
     REDIS_HOST = '127.0.0.1'

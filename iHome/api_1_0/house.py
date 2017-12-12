@@ -5,9 +5,10 @@ from iHome.utils.response_code import RET
 from iHome.utils.common import login_required
 from iHome import constants
 from iHome.api_1_0 import api
-from iHome.models import Area, House, Facility, HouseImage
+from iHome.models import Area, House, Facility, HouseImage, Order
 from iHome.utils.image_storage import storage_image
 from iHome.constants import QINIU_DOMIN_PREFIX
+import datetime
 
 
 @api.route('/areas')
@@ -193,16 +194,55 @@ def get_index_houses():
 @api.route('/houses')
 def get_house_list():
     args = request.args
-    aid = args.get('aid')
-    aname = args.get('aname')
-    sd = args.get('sd')
-    ed = args.get('ed')
+    aid = args.get('aid', '')
+    sd = args.get('sd', '')
+    ed = args.get('ed', '')
     p = args.get('p', '1')
     sk = args.get('sk', 'new')
+    try:
+        p = int(p)
+    except Exception as e:
+        current_app.logger.error(e)
+        p = 1
+
+    try:
+        if sd:
+            sd = datetime.datetime.strptime(sd, '%Y-%m-%d')
+        if ed:
+            ed = datetime.datetime.strptime(ed, '%Y-%m-%d')
+        if sd and ed:
+            assert ed > sd, Exception('结束时间必须大于开始时间')
+    except Exception as e:
+        current_app.logger.error(e)
+        sd = ''
+        ed = ''
+
+    try:
+        redis_key = "house_list_%s_%s_%s_%s" % (sd, ed, aid, sk)
+        response_dict = redis_store.hget(redis_key, p)
+        if response_dict:
+            return jsonify(errno=RET.OK, errmsg='ok', data=eval(response_dict))
+    except Exception as e:
+        current_app.logger.error(e)
+
+
     try:
         houses_query = House.query
     except Exception as e:
         current_app.logger.error(e)
+    if aid:
+        houses_query = houses_query.filter(House.area_id == aid)
+
+    orders = None
+    if sd and ed:
+        orders = Order.query.filter(Order.begin_date < ed, Order.end_date > sd).all()
+    elif sd:
+        orders = Order.query.filter(Order.begin_date < sd, Order.end_date > sd).all()
+    elif ed:
+        orders = Order.query.filter(Order.begin_date > ed, Order.end_date > ed).all()
+
+    if orders:
+        houses_query = houses_query.filter(House.id.notin_([order.house_id for order in orders]))
 
     if sk == 'booking':
         houses_query = houses_query.order_by(House.order_count.desc())
@@ -212,7 +252,7 @@ def get_house_list():
         houses_query = houses_query.order_by(House.price.desc())
     else:
         houses_query = houses_query.order_by(House.create_time.desc())
-    paginate = houses_query.paginate(int(p), constants.HOUSE_LIST_PAGE_CAPACITY, False)
+    paginate = houses_query.paginate(p, constants.HOUSE_LIST_PAGE_CAPACITY, False)
     total_page = paginate.pages
     houses = paginate.items
 
@@ -220,4 +260,17 @@ def get_house_list():
     for house in houses:
         houses_dict.append(house.to_basic_dict())
 
-    return jsonify(errno=RET.OK, errmsg='ok', data={'houses': houses_dict, 'total_page': total_page})
+    response_dict = {'houses': houses_dict, 'total_page': total_page}
+
+    try:
+        redis_key = "house_list_%s_%s_%s_%s" % (sd, ed, aid, sk)
+        pipeline = redis_store.pipeline()
+        pipeline.multi()
+        pipeline.hset(redis_key, p, response_dict)
+        pipeline.expire(redis_key, constants.HOUSE_LIST_REDIS_EXPIRES)
+        pipeline.execute()
+
+    except Exception as e:
+        current_app.logger.error(e)
+
+    return jsonify(errno=RET.OK, errmsg='ok', data=response_dict)

@@ -26,6 +26,11 @@ function showErrorMsg() {
 
 $(document).ready(function(){
     // TODO: 判断用户是否登录
+    $.get('/api/v1.0/session', function (resp) {
+        if (!(resp.data.user_id && resp.data.name)){
+            location.href = '/login.html'
+        }
+    });
 
     $(".input-daterange").datepicker({
         format: "yyyy-mm-dd",
@@ -42,7 +47,7 @@ $(document).ready(function(){
         } else {
             var sd = new Date(startDate);
             var ed = new Date(endDate);
-            days = (ed - sd)/(1000*3600*24) + 1;
+            days = (ed - sd)/(1000*3600*24);
             var price = $(".house-text>p>span").html();
             var amount = days * parseFloat(price);
             $(".order-amount>span").html(amount.toFixed(2) + "(共"+ days +"晚)");
@@ -52,6 +57,36 @@ $(document).ready(function(){
     var houseId = queryData["hid"];
 
     // TODO: 获取房屋的基本信息
+    $.get('/api/v1.0/houses/'+ houseId, function (resp) {
+        if (resp.errno == '0'){
+            $(".house-info>img").attr('src', resp.data.house_info.img_urls[0]);
+            $(".house-text>h3").html(resp.data.house_info.title);
+            $(".house-text span").html((resp.data.house_info.price / 100).toFixed(2));
+        }
+    });
+
 
     // TODO: 订单提交
-})
+    $(".submit-btn").on('click', function () {
+        var startDate = $("#start-date").val();
+        var endDate = $("#end-date").val();
+        $.ajax({
+            url: '/api/v1.0/orders',
+            type: 'post',
+            contentType: 'application/json',
+            headers: {
+                'X-CSRFToken': getCookie('csrf_token')
+            },
+            data: JSON.stringify({'sd': startDate, 'ed': endDate, 'house_id': houseId}),
+            success: function (resp) {
+                if (resp.errno == '0'){
+                    location.href = '/orders.html'
+                }else if (resp.errno == '4101'){
+                    location.href = '/login.html'
+                }else {
+                    alert(resp.errmsg)
+                }
+            }
+        })
+    })
+});
