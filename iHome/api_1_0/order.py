@@ -50,23 +50,23 @@ def add_order():
     if order:
         return jsonify(errno=RET.DATAEXIST, errmsg='该房屋已被预订')
 
-    # order = Order()
-    # order.user_id = user_id
-    # order.house_id = house_id
-    # order.begin_date = sd
-    # order.end_date = ed
-    # order.days = (ed-sd).days
-    # order.house_price = house.price
-    # order.amount = house.price * order.days
-    #
-    # house.order_count += 1
-    # try:
-    #     db.session.add(order)
-    #     db.session.commit()
-    # except Exception as e:
-    #     current_app.logger.error(e)
-    #     db.session.rollback()
-    #     return jsonify(errno=RET.DATAERR, errmsg='数据保存失败')
+    order = Order()
+    order.user_id = user_id
+    order.house_id = house_id
+    order.begin_date = sd
+    order.end_date = ed
+    order.days = (ed-sd).days
+    order.house_price = house.price
+    order.amount = house.price * order.days
+
+    house.order_count += 1
+    try:
+        db.session.add(order)
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        db.session.rollback()
+        return jsonify(errno=RET.DATAERR, errmsg='数据保存失败')
 
     return jsonify(errno=RET.OK, errmsg='ok')
 
