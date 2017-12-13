@@ -15,7 +15,7 @@ def add_order():
     sd = json_data.get('sd')
     ed = json_data.get('ed')
     house_id = json_data.get('house_id')
-    print sd, ed
+
     user_id = g.user_id
     if not all([sd, ed, house_id, user_id]):
         return jsonify(errno=RET.PARAMERR, errmsg='参数不全')
@@ -27,7 +27,6 @@ def add_order():
     except Exception as e:
         current_app.logger.error(e)
         return jsonify(errno=RET.PARAMERR, errmsg='参数错误')
-    print sd, ed
 
     try:
         house = House.query.get(house_id)
@@ -51,43 +50,23 @@ def add_order():
     if order:
         return jsonify(errno=RET.DATAEXIST, errmsg='该房屋已被预订')
 
-    # id = db.Column(db.Integer, primary_key=True)  # 订单编号
-    # user_id = db.Column(db.Integer, db.ForeignKey("ih_user_profile.id"), nullable=False)  # 下订单的用户编号
-    # house_id = db.Column(db.Integer, db.ForeignKey("ih_house_info.id"), nullable=False)  # 预订的房间编号
-    # begin_date = db.Column(db.DateTime, nullable=False)  # 预订的起始时间
-    # end_date = db.Column(db.DateTime, nullable=False)  # 预订的结束时间
-    # days = db.Column(db.Integer, nullable=False)  # 预订的总天数
-    # house_price = db.Column(db.Integer, nullable=False)  # 房屋的单价
-    # amount = db.Column(db.Integer, nullable=False)  # 订单的总金额
-    # status = db.Column(  # 订单的状态
-    #     db.Enum(
-    #         "WAIT_ACCEPT",  # 待接单,
-    #         "WAIT_PAYMENT",  # 待支付
-    #         "PAID",  # 已支付
-    #         "WAIT_COMMENT",  # 待评价
-    #         "COMPLETE",  # 已完成
-    #         "CANCELED",  # 已取消
-    #         "REJECTED"  # 已拒单
-    #     ),
-    #     default="WAIT_ACCEPT", index=True)
-    # comment = db.Column(db.Text)  # 订单的评论信息或者拒单原因
-    order = Order()
-    order.user_id = user_id
-    order.house_id = house_id
-    order.begin_date = sd
-    order.end_date = ed
-    order.days = (ed-sd).days
-    order.house_price = house.price
-    order.amount = house.price * order.days
-
-    house.order_count += 1
-    try:
-        db.session.add(order)
-        db.session.commit()
-    except Exception as e:
-        current_app.logger.error(e)
-        db.session.rollback()
-        return jsonify(errno=RET.DATAERR, errmsg='数据保存失败')
+    # order = Order()
+    # order.user_id = user_id
+    # order.house_id = house_id
+    # order.begin_date = sd
+    # order.end_date = ed
+    # order.days = (ed-sd).days
+    # order.house_price = house.price
+    # order.amount = house.price * order.days
+    #
+    # house.order_count += 1
+    # try:
+    #     db.session.add(order)
+    #     db.session.commit()
+    # except Exception as e:
+    #     current_app.logger.error(e)
+    #     db.session.rollback()
+    #     return jsonify(errno=RET.DATAERR, errmsg='数据保存失败')
 
     return jsonify(errno=RET.OK, errmsg='ok')
 
@@ -113,3 +92,34 @@ def get_orders():
         order_dict.append(order.to_dict())
 
     return jsonify(errno=RET.OK, errmsg='ok', data={'orders': order_dict})
+
+
+@api.route('/orders', methods=["PUT"])
+@login_required
+def change_order_status():
+    user_id = g.user_id
+    order_id = request.json.get('order_id')
+    if not all([user_id, order_id]):
+        return jsonify(errno=RET.PARAMERR, errmsg='参数错误')
+    try:
+        order = Order.query.get(order_id)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg='数据查询错误')
+
+    if not order:
+        return jsonify(errno=RET.NODATA, errmsg='订单不存在')
+
+    if user_id != order.house.user_id:
+        return jsonify(errno=RET.ROLEERR, errmsg='权限有误')
+
+    order.status = 'WAIT_COMMENT'
+
+    try:
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        db.session.rollback()
+        return jsonify(errno=RET.DBERR, errmsg='数据保存失败')
+
+    return jsonify(errno=RET.OK, errmsg='ok')
