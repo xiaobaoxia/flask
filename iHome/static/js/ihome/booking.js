@@ -27,8 +27,9 @@ function showErrorMsg() {
 $(document).ready(function(){
     // TODO: 判断用户是否登录
     $.get('/api/v1.0/session', function (resp) {
+        var houseId = queryData["hid"];
         if (!(resp.data.user_id && resp.data.name)){
-            location.href = '/login.html'
+            location.href = '/login.html?' + decodeURI(document.location.href)
         }
     });
 
@@ -82,7 +83,7 @@ $(document).ready(function(){
                 if (resp.errno == '0'){
                     location.href = '/orders.html'
                 }else if (resp.errno == '4101'){
-                    location.href = '/login.html'
+                    location.href = '/login.html?next=/booking.html?hid='+houseId
                 }else {
                     alert(resp.errmsg)
                 }

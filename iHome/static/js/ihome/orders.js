@@ -21,11 +21,38 @@ $(document).ready(function(){
     // TODO: 查询房客订单
     $.get('/api/v1.0/orders?role=custom', function (resp) {
         if (resp.errno == '0'){
-            $(".orders-list").html(template('orders-list-tmpl', {'orders': resp.data.orders}))
+            $(".orders-list").html(template('orders-list-tmpl', {'orders': resp.data.orders}));
             // TODO: 查询成功之后需要设置评论的相关处理
             $(".order-comment").on("click", function(){
                 var orderId = $(this).parents("li").attr("order-id");
                 $(".modal-comment").attr("order-id", orderId);
+                $(".modal-comment").on('click', function () {
+                    var comment = $("#comment").val();
+                    if (!comment){
+                        return alert('请输入评论内容')
+                    }
+                    orderId = $(".modal-comment").attr("order-id");
+                    $.ajax({
+                        type: 'put',
+                        url: '/api/v1.0/orders/comment',
+                        data: JSON.stringify({'order_id': orderId, 'comment': comment}),
+                        contentType: 'application/json',
+                        headers: {
+                            'X-CSRFToken': getCookie('csrf_token')
+                        },
+                        success: function (resp) {
+                            if (resp.errno == '0'){
+                                $(".orders-list>li[order-id="+ orderId +"]>div.order-content>div.order-text>ul li:eq(4)>span").html("已完成");
+                                $("ul.orders-list>li[order-id="+ orderId +"]>div.order-title>div.order-operate").hide();
+                                $("#comment-modal").modal("hide");
+                            }else if (resp.errno == '4101'){
+                                location.href = '/'
+                            }else {
+                                alert(resp.errmsg)
+                            }
+                        }
+                    })
+                })
             });
         }else if (resp.errno == '4101'){
             location.href = '/login.html'
@@ -33,6 +60,4 @@ $(document).ready(function(){
             alert(resp.errmsg)
         }
     });
-
-
 });

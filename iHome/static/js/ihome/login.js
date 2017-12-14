@@ -29,6 +29,10 @@ $(document).ready(function() {
             'mobile': mobile,
             'password': password
         };
+        function decodeQuery(){
+            var search = decodeURI(document.location.search);
+            return search.replace(/(^\?)/, '')
+        }
         $.ajax({
             url: '/api/v1.0/session',
             type: 'post',
@@ -39,7 +43,14 @@ $(document).ready(function() {
             },
             success:function (resp) {
                 if (resp.errno == 0){
-                    location.href = '/'
+                    var search = decodeURI(document.location.search)
+                    if (search){
+                        alert(search)
+                        location.href = search.replace(/(^\?)/, '')
+                    }else {
+                        location.href = '/'
+                    }
+                    // location.href = '/'
                 }else {
                     $("#password-err span").html(resp.errmsg);
                     $("#password-err").show();

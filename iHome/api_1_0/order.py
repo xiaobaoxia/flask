@@ -98,11 +98,17 @@ def get_orders():
 @login_required
 def change_order_status():
     user_id = g.user_id
+
     order_id = request.json.get('order_id')
-    if not all([user_id, order_id]):
+
+    action = request.json.get('action')
+
+    if not all([user_id, order_id, action]):
         return jsonify(errno=RET.PARAMERR, errmsg='参数错误')
+
     try:
         order = Order.query.get(order_id)
+
     except Exception as e:
         current_app.logger.error(e)
         return jsonify(errno=RET.DBERR, errmsg='数据查询错误')
@@ -113,7 +119,16 @@ def change_order_status():
     if user_id != order.house.user_id:
         return jsonify(errno=RET.ROLEERR, errmsg='权限有误')
 
-    order.status = 'WAIT_COMMENT'
+    if action not in ['accept', 'reject']:
+        return jsonify(errno=RET.PARAMERR, errmsg='参数有误')
+    if action == 'accept':
+        order.status = 'WAIT_COMMENT'
+    elif action == 'reject':
+        reason = request.json.get('reason')
+        if not reason:
+            return jsonify(errno=RET.PARAMERR, errmsg='请填写拒单原因')
+        order.status = 'REJECTED'
+        order.comment = reason
 
     try:
         db.session.commit()
@@ -122,4 +137,37 @@ def change_order_status():
         db.session.rollback()
         return jsonify(errno=RET.DBERR, errmsg='数据保存失败')
 
-    return jsonify(errno=RET.OK, errmsg='ok')
+    return jsonify(errno=RET.OK, errmsg='ok', data=order.to_dict())
+
+
+@api.route('/orders/comment', methods=['PUT'])
+@login_required
+def order_comment():
+    user_id = g.user_id
+    order_id = request.json['order_id']
+    comment = request.json['comment']
+
+    if not all([user_id, order_id, comment]):
+        return jsonify(errno=RET.PARAMERR, errmsg='参数错误')
+
+    try:
+        order = Order.query.get(order_id)
+
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg='数据查询错误')
+
+    if not order:
+        return jsonify(errno=RET.NODATA, errmsg='订单不存在')
+
+    order.comment = comment
+    order.status = 'COMPLETE'
+    try:
+        db.session.commit()
+
+    except Exception as e:
+        current_app.logger.error(e)
+        db.session.rollback()
+        return jsonify(errno=RET.DBERR, errmsg='数据保存错误')
+
+    return jsonify(errno=RET.OK, errmsg='ok', data=order.to_dict())

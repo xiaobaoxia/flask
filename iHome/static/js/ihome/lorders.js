@@ -21,7 +21,7 @@ $(document).ready(function(){
     $.get('/api/v1.0/orders?role=landlord', function (resp) {
          if (resp.errno == '0'){
              $(".orders-list").html(template('orders-list-tmpl', {'orders': resp.data.orders}));
-                  // TODO: 查询成功之后需要设置接单和拒单的处理
+
              $(".order-accept").on("click", function(){
                  var orderId = $(this).parents("li").attr("order-id");
                  $(".modal-accept").attr("order-id", orderId);
@@ -32,7 +32,7 @@ $(document).ready(function(){
                      url: '/api/v1.0/orders',
                      type: 'put',
                      contentType: 'application/json',
-                     data: JSON.stringify({'order_id': orderId}),
+                     data: JSON.stringify({'order_id': orderId, 'cation': 'accept'}),
                      headers: {
                          'X-CSRFToken': getCookie('csrf_token')
                      },
@@ -50,18 +50,43 @@ $(document).ready(function(){
                              alert(resp.errmsg)
                          }
                      }
-                 })
+                 });
              });
+             $(".order-reject").on("click", function(){
+                 var orderId = $(this).parents("li").attr("order-id");
+                 $(".modal-reject").attr("order-id", orderId);
+             });
+             $(".modal-reject").on("click", function () {
+                 var orderId = $(".modal-reject").attr("order-id");
+                 var reason = $("#reject-reason").val();
+                 $.ajax({
+                     url: '/api/v1.0/orders',
+                     type: 'put',
+                     data: JSON.stringify({'reason': reason, 'order_id': orderId, 'action': 'reject'}),
+                     headers: {
+                         'X-CSRFToken': getCookie('csrf_token')
+                     },
+                     contentType: 'application/json',
+                     success: function (resp) {
+                         if (resp.errno == '0'){
+                             // 1. 设置订单状态的html
+                            $(".orders-list>li[order-id="+ orderId +"]>div.order-content>div.order-text>ul li:eq(4)>span").html("已拒单");
+                            // 2. 隐藏接单和拒单操作
+                            $("ul.orders-list>li[order-id="+ orderId +"]>div.order-title>div.order-operate").hide();
+                            // 3. 隐藏弹出的框
+                            $("#reject-modal").modal("hide");
+                         }else if (resp.errno == '4101'){
+                             location.href = '/login.html?next=/lorders.html'
+                         }else {
+                             alert(resp.errmsg)
+                         }
+                     }
+                 })
+             })
          }else if (resp.errno == '4101'){
-             location.href = '/login.html'
+             location.href = '/login.html?'+ decodeURI(document.location.href);
          }else {
              alert(resp.errmsg)
          }
-    });
-
-
-    $(".order-reject").on("click", function(){
-        var orderId = $(this).parents("li").attr("order-id");
-        $(".modal-reject").attr("order-id", orderId);
     });
 });

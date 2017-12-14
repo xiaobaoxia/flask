@@ -1,5 +1,5 @@
 # coding=utf-8
-from flask import Blueprint, make_response
+from flask import Blueprint, make_response, request
 from flask_wtf.csrf import generate_csrf
 
 static_api = Blueprint('static', __name__, static_folder='static')
